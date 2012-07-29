@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>Twitter clients</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="http://netdna.bootstrapcdn.com/twitter-bootstrap/2.0.4/css/bootstrap-combined.min.css">
+  <style>
+  body{
+    padding-top: 20px;
+  }
+  .container{
+    position: relative;
+  }
+  .progress{
+    margin-bottom: 1px;
+  }
+  #data-helpers{
+    margin-bottom: 20px;
+    text-align: right;
+  }
+  .follow{
+    position: absolute;
+    top: 0;
+    right: 0;
+  }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+    	<h1>Twitter clients</h1>
+      <p>based on the work by <a href="https://twitter.com/dzajdband">Dan Zajdband</a>, <a href="http://twitter-clients.herokuapp.com/">twitter-clients.herokuapp.com</a></p>
+    </header>
+    <div class="follow">
+      <a href="https://twitter.com/cheeaun" class="twitter-follow-button" data-show-count="false">Follow @cheeaun</a>
+    </div>
+    <div id="data-helpers">
+      Total tweets: <b id="total-tweets">0</b>
+      &nbsp;&nbsp;
+      Total clients: <b id="total-clients">0</b>
+      &nbsp;&nbsp;<button id="p-button" class="btn">Play/Pause</button>
+    </div>
+  	<div id="data">Loading&hellip;</div>
+  </div>
+	<script src="http://twitter-clients.herokuapp.com/socket.io/socket.io.js"></script>
+	<script>
+	(function(){
+  	var data = [], total = 0;
+    var $totaltweets = document.getElementById('total-tweets');
+    var $totalclients = document.getElementById('total-clients');
+    var $pbutton = document.getElementById('p-button');
+    var $container = document.getElementById('data');
+	  var socket = io.connect('http://twitter-clients.herokuapp.com');
+
+	  socket.on('tweet', function(client){
+	    total++;
+      var found = false;
+      for (var i=0, l=data.length; i<l; i++){
+        var d = data[i];
+        if (d.name == client){
+          d.count++;
+          found = true;
+        }
+      }
+      if (!found){
+        data.push({
+          name: client,
+          count: 1
+        });
+      }
+	  });
+
+    var paused = false;
+    $pbutton.onclick = function(e){
+      e.preventDefault();
+      paused = !paused;
+    };
+
+    setInterval(function(){
+      if (paused) return;
+      var html = '<table class="table">';
+      data.sort(function(a, b){
+        return b.count - a.count;
+      });
+      var l = data.length;
+      for (var i=0; i<l; i++){
+        var d = data[i];
+        var count = d.count;
+        var percent = (count/total*100);
+        html += '<tr>'
+            + '<td>' + d.name + '</td>'
+            + '<td>' + count + '</td>'
+            + '<td width="60%">'
+              + '<div class="progress progress-striped">'
+                + '<div class="bar" style="width: ' + percent + '%">' + Math.round(percent) + '%</div>'
+              + '</div>'
+            + '</td>'
+          + '</tr>';
+      }
+      html += '</table>';
+      $container.innerHTML = html;
+      $totaltweets.innerHTML = total;
+      $totalclients.innerHTML = l;
+    }, 5000);
+	})();
+	</script>
+  <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+</body>
+</html>
